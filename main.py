@@ -2,29 +2,39 @@ import gradio as gr
 import openai
 import pyttsx3
 import speech_recognition as sr
-import webbrowser as wb
 
 openai.api_key = open('key.txt','r').read().strip('\n')
 messages_history = []
 
-voice_assistant = pyttsx3.init()
-voice = voice_assistant.getProperty('voices')
-voice_assistant.setProperty('voice',voice[1].id)
+# voice_assistant = pyttsx3.init()
+# voice = voice_assistant.getProperty('voices')
+# voice_assistant.setProperty('voice',voice[1].id)
 
-def speak(audio):
-    voice_assistant.say(audio)
-    voice_assistant.runAndWait()
+# def speak(audio):
+#     voice_assistant.say(audio)
+#     voice_assistant.runAndWait()
 
-def command():
-    c = sr.Recognizer()
-    with sr.Microphone() as source:
-        c.pause_threshold = 2
-        audio = c.listen(source)
+# def command():
+#     c = sr.Recognizer()
+#     with sr.Microphone() as source:
+#         c.pause_threshold = 2
+#         audio = c.listen(source)
+#     try:
+#         query = c.recognize_google(audio,language='en')
+#         return query
+#     except sr.UnknownValueError:
+#         print("Please repeat or typing the command")
+
+def transcribe(audio):
+    recog = sr.Recognizer()
+    audio_to_byte = sr.AudioData(audio.tobytes(),sr=audio.shape[0] / audio.shape[1])
     try:
-        query = c.recognize_google(audio,language='en')
-        return query
+        transcript = recog.recognize_google(audio_to_byte)
     except sr.UnknownValueError:
-        print("Please repeat or typing the command")
+        transcript = "Unable to recognize speech"
+    except sr.RequestError as e:
+        transcript = "Error Network"
+    return transcript
 # print('your command')
 # text = command()
 # print(text)
@@ -59,8 +69,13 @@ with gr.Blocks() as demo:
         txt.submit(None,None,txt,_js="() => {''}")
     with gr.Tab("Speech_to_Text"):
         # button = gr.Button(value = 'Click to Speak (by English or Vietnamese)')
-        gr.Audio(source="microphone")
-        # gr.Button("Check")
-        
+        gr_audio = gr.Audio(source="microphone")
+        submit_button = gr.Button("Submit your message")
+        submit_button.click(transcribe,inputs=[gr_audio],outputs=[txt])
+        txt.submit(predict,txt,chatbot)
+        txt.submit(lambda: "",None,txt)
+        txt.submit(None,None,txt,_js="() => {''}")
+
+
 #
 demo.launch()
