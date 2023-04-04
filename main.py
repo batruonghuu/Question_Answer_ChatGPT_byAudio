@@ -25,14 +25,14 @@ def command():
         return query
     except sr.UnknownValueError:
         print("Please repeat or typing the command")
-print('your command')
-text = command()
-print(text)
-# while True:
-# print(sr.Microphone.list_microphone_names())
-    # print('what your command')
-    # query = command().lower()
-    # print(query)
+# print('your command')
+# text = command()
+# print(text)
+# # while True:
+# # print(sr.Microphone.list_microphone_names())
+#     # print('what your command')
+#     # query = command().lower()
+#     # print(query)
 
 def predict(inp):
     messages_history.append({'role':'user','content':inp})
@@ -50,12 +50,17 @@ def predict(inp):
 #     user_input = input(">:")
 #     print(user_input)
 #     print(chat(user_input))
-# with gr.Blocks() as demo:
-#     chatbot = gr.Chatbot()
-#     with gr.Row():
-#         txt = gr.Textbox(show_label=False,placeholder='Type your message here').style(container=False)
-#         txt.submit(predict,txt,chatbot)
-#         txt.submit(lambda: "",None,txt)
-#         txt.submit(None,None,txt,_js="() => {''}")
+with gr.Blocks() as demo:
+    chatbot = gr.Chatbot()
+    with gr.Tab("Text"):
+        txt = gr.Textbox(show_label=False,placeholder='Type your message here').style(container=False)
+        txt.submit(predict,txt,chatbot)
+        txt.submit(lambda: "",None,txt)
+        txt.submit(None,None,txt,_js="() => {''}")
+    with gr.Tab("Speech_to_Text"):
+        # button = gr.Button(value = 'Click to Speak (by English or Vietnamese)')
+        gr.Audio(source="microphone")
+        # gr.Button("Check")
+        
 #
-# demo.launch(share=True)
+demo.launch()
