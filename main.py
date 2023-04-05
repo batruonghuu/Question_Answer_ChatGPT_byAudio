@@ -1,8 +1,59 @@
 import gradio as gr
 import openai
+import pyttsx3
+import speech_recognition as sr
+# import numpy as np
+# from transformers import pipeline
+import tensorflow
+
+# p = pipeline("automatic-speech-recognition")
 
 openai.api_key = open('key.txt','r').read().strip('\n')
 messages_history = []
+
+# voice_assistant = pyttsx3.init()
+# voice = voice_assistant.getProperty('voices')
+# voice_assistant.setProperty('voice',voice[1].id)
+
+# def speak(audio):
+#     voice_assistant.say(audio)
+#     voice_assistant.runAndWait()
+
+# def command():
+#     c = sr.Recognizer()
+#     with sr.Microphone() as source:
+#         c.pause_threshold = 2
+#         audio = c.listen(source)
+#     try:
+#         query = c.recognize_google(audio,language='en')
+#         return query
+#     except sr.UnknownValueError:
+#         print("Please repeat or typing the command")
+
+def transcribe(audio):
+    # text = p(audio)["text"]
+    # return text
+    recog = sr.Recognizer()
+    audio_np = audio[0]
+    # sample_rate = audio[1]
+    # sample_width = audio.dtype.itemsize
+    audio_to_byte = sr.AudioData((audio[0],audio[1]),sample_rate=16000,sample_width=2)
+
+    try:
+        transcript = recog.recognize_google(audio_to_byte)
+    except sr.UnknownValueError:
+        transcript = "Unable to recognize speech"
+    except sr.RequestError as e:
+        transcript = "Error Network"
+    return transcript
+# print('your command')
+# text = command()
+# print(text)
+# # while True:
+# # print(sr.Microphone.list_microphone_names())
+#     # print('what your command')
+#     # query = command().lower()
+#     # print(query)
 
 def predict(inp):
     messages_history.append({'role':'user','content':inp})
@@ -20,12 +71,36 @@ def predict(inp):
 #     user_input = input(">:")
 #     print(user_input)
 #     print(chat(user_input))
+# def transcribe_action(input_audio):
+#     output = transcribe(input_audio)
+#     txt.submit(predict, txt, chatbot)
+#     txt.submit(lambda: "", None, txt)
+#     txt.submit(None, None, txt, _js="() => {''}")
+#     return output
+
 with gr.Blocks() as demo:
     chatbot = gr.Chatbot()
-    with gr.Row():
-        txt = gr.Textbox(show_lable=False,placeholder='Type your message here').style(container=False)
+    with gr.Tab("Text"):
+        txt = gr.Textbox(show_label=False,placeholder='Type your message here').style(container=False)
         txt.submit(predict,txt,chatbot)
         txt.submit(lambda: "",None,txt)
         txt.submit(None,None,txt,_js="() => {''}")
+    with gr.Tab("Speech_to_Text"):
+        # button = gr.Button(value = 'Click to Speak (by English or Vietnamese)')
+        # gr_audio = gr.Audio(source="microphone", type="filepath")
+        gr_audio = gr.Microphone()
+        outputs_audio = gr.Textbox()
+        # gr.Interface(transcribe,inputs=gr_audio,outputs=outputs_audio)
+        submit_button = gr.Button("Submit your message")
+        # print(gr_audio.value)
 
+        # print(gr_audio)
+        submit_button.click(fn=transcribe,inputs=gr_audio,outputs=outputs_audio)
+            # txt.submit(predict,txt,chatbot)
+            # txt.submit(lambda: "",None,txt)
+            # txt.submit(None,None,txt,_js="() => {''}")
+
+
+#
 demo.launch()
+# print(gr_audio.value)
