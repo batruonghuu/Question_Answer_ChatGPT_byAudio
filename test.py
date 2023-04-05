@@ -1,31 +1,48 @@
-from transformers import pipeline
-
 import gradio as gr
+import whisper
+import speech_recognition as sr
 
-asr = pipeline("automatic-speech-recognition", "facebook/wav2vec2-base-960h")
-classifier = pipeline("text-classification")
 
+model = whisper.load_model("base")
 
-def speech_to_text(speech):
-    text = asr(speech)["text"]
+recog = sr.Recognizer()
+def itself(audio):
+    with sr.AudioFile(audio) as source:
+        audio_data = recog.record(source)
+        text = recog.recognize_google(audio_data=audio_data, language='en-US')
     return text
+def inference(audio):
+    audio = whisper.load_audio(audio)
+    audio = whisper.pad_or_trim(audio)
+
+    mel = whisper.log_mel_spectrogram(audio).to(model.device)
+
+    _, probs = model.detect_language(mel)
+
+    options = whisper.DecodingOptions(fp16=False)
+    result = whisper.decode(model, mel, options)
+
+    print(result.text)
+    return result.text, gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)
 
 
-def text_to_sentiment(text):
-    return classifier(text)[0]["label"]
+block = gr.Blocks()
 
+with block:
+    with gr.Group():
+        with gr.Box():
+            with gr.Row().style(mobile_collapse=False, equal_height=True):
+                audio = gr.Audio(
+                    label="Input Audio",
+                    show_label=False,
+                    source="microphone",
+                    type="filepath"
+                )
+                audio.interactive
+                btn = gr.Button("Transcribe")
+        text = gr.Textbox(show_label=False, elem_id="result-textarea")
 
-demo = gr.Blocks()
+        # btn.click(inference, inputs=[audio], outputs=text)
+        btn.click(itself, inputs=[audio], outputs=text)
 
-with demo:
-    audio_file = gr.Audio(type="filepath")
-    text = gr.Textbox()
-    label = gr.Label()
-
-    b1 = gr.Button("Recognize Speech")
-    b2 = gr.Button("Classify Sentiment")
-
-    b1.click(speech_to_text, inputs=audio_file, outputs=text)
-    b2.click(text_to_sentiment, inputs=text, outputs=label)
-
-demo.launch()
+block.launch()
