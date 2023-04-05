@@ -1,13 +1,13 @@
 import gradio as gr
 import openai
-import pyttsx3
+# import pyttsx3
 import speech_recognition as sr
 # import numpy as np
 # from transformers import pipeline
-import tensorflow
+# import tensorflow
 
 # p = pipeline("automatic-speech-recognition")
-
+recog = sr.Recognizer()
 openai.api_key = open('key.txt','r').read().strip('\n')
 messages_history = []
 
@@ -30,22 +30,28 @@ messages_history = []
 #     except sr.UnknownValueError:
 #         print("Please repeat or typing the command")
 
-def transcribe(audio):
-    # text = p(audio)["text"]
-    # return text
-    recog = sr.Recognizer()
-    audio_np = audio[0]
-    # sample_rate = audio[1]
-    # sample_width = audio.dtype.itemsize
-    audio_to_byte = sr.AudioData((audio[0],audio[1]),sample_rate=16000,sample_width=2)
+def itself(audio):
+    with sr.AudioFile(audio) as source:
+        audio_data = recog.record(source)
+        text = recog.recognize_google(audio_data=audio_data, language='en-US')
+    return text
 
-    try:
-        transcript = recog.recognize_google(audio_to_byte)
-    except sr.UnknownValueError:
-        transcript = "Unable to recognize speech"
-    except sr.RequestError as e:
-        transcript = "Error Network"
-    return transcript
+# def transcribe(audio):
+#     # text = p(audio)["text"]
+#     # return text
+#     recog = sr.Recognizer()
+#     audio_np = audio[0]
+#     # sample_rate = audio[1]
+#     # sample_width = audio.dtype.itemsize
+#     audio_to_byte = sr.AudioData((audio[0],audio[1]),sample_rate=16000,sample_width=2)
+#
+#     try:
+#         transcript = recog.recognize_google(audio_to_byte)
+#     except sr.UnknownValueError:
+#         transcript = "Unable to recognize speech"
+#     except sr.RequestError as e:
+#         transcript = "Error Network"
+#     return transcript
 # print('your command')
 # text = command()
 # print(text)
@@ -86,16 +92,29 @@ with gr.Blocks() as demo:
         txt.submit(lambda: "",None,txt)
         txt.submit(None,None,txt,_js="() => {''}")
     with gr.Tab("Speech_to_Text"):
+        with gr.Row().style(mobile_collapse=False, equal_height=True):
+            gr_audio = gr.Audio(
+                label="Input Audio",
+                show_label=False,
+                source="microphone",
+                type="filepath"
+            )
+            btn = gr.Button("Transcribe")
+
         # button = gr.Button(value = 'Click to Speak (by English or Vietnamese)')
         # gr_audio = gr.Audio(source="microphone", type="filepath")
-        gr_audio = gr.Microphone()
+        # gr_audio = gr.Microphone()
         outputs_audio = gr.Textbox()
-        # gr.Interface(transcribe,inputs=gr_audio,outputs=outputs_audio)
+        btn.click(itself,inputs=gr_audio,outputs=outputs_audio)
         submit_button = gr.Button("Submit your message")
+        submit_button.click(predict,inputs=outputs_audio,outputs=chatbot)
+        submit_button.click(lambda: "",inputs=None,outputs=outputs_audio)
+
+        # gr.Interface(transcribe,inputs=gr_audio,outputs=outputs_audio)
         # print(gr_audio.value)
 
         # print(gr_audio)
-        submit_button.click(fn=transcribe,inputs=gr_audio,outputs=outputs_audio)
+        # submit_button.click(fn=transcribe,inputs=gr_audio,outputs=outputs_audio)
             # txt.submit(predict,txt,chatbot)
             # txt.submit(lambda: "",None,txt)
             # txt.submit(None,None,txt,_js="() => {''}")
